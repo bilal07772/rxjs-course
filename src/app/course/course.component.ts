@@ -11,11 +11,12 @@ import {
     concatMap,
     switchMap,
     withLatestFrom,
-    concatAll, shareReplay
+    concatAll, shareReplay, first, take
 } from 'rxjs/operators';
-import {merge, fromEvent, Observable, concat} from 'rxjs';
+import {merge, fromEvent, Observable, concat, forkJoin} from 'rxjs';
 import {Lesson} from '../model/lesson';
 import {createHttpObservable} from '../common/util';
+import { Store } from '../common/store.service';
 
 
 @Component({
@@ -25,7 +26,7 @@ import {createHttpObservable} from '../common/util';
 })
 export class CourseComponent implements OnInit, AfterViewInit {
 
-    courseId:string;
+    courseId:number;
 
     course$ : Observable<Course>;
 
@@ -34,7 +35,7 @@ export class CourseComponent implements OnInit, AfterViewInit {
 
     @ViewChild('searchInput', { static: true }) input: ElementRef;
 
-    constructor(private route: ActivatedRoute) {
+    constructor(private route: ActivatedRoute,private store:Store) {
 
 
     }
@@ -43,7 +44,19 @@ export class CourseComponent implements OnInit, AfterViewInit {
 
         this.courseId = this.route.snapshot.params['id'];
 
-        this.course$ = createHttpObservable(`/api/courses/${this.courseId}`);
+        this.course$ = this.store.selectCourseDetailsById(this.courseId)
+        .pipe(
+            // We need to complete after getting value
+           // first()  
+            take(1)  
+        );
+    // forkJoin(this.course$,this.loadLessons()).subscribe(console.log);
+    // this.loadLessons.pipe(
+    //     withLatestFrom(this.course$)
+    // ).subscribe([this.lessons$,this.course$]=>{
+    //     console
+    // });
+    
 
     }
 
